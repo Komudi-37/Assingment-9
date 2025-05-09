@@ -1,0 +1,164 @@
+/*Assignment-Object Oriented Programming
+Design and implement an object-oriented solution for a Student Management System
+that demonstrates a comprehensive understanding of C++ class concepts
+Problem Statement
+A local university requires a software system to manage student information efficiently. The
+system should provide functionality to:
+• Create and manage student records
+• Track student academic information
+• Perform basic operations on student data
+System Requirements
+
+1. Student Class Design
+   Develop a Student class with the following specifications:
+   • Private data members to store:
+   o Student name
+   o Roll number
+   o CGPA
+   o List of enrolled courses
+   • Constructors:
+   o Default constructor
+   o Parameterized constructor to initialize basic student details
+   o Copy constructor
+   • Destructor to handle resource cleanup
+2. Student Management Functionality
+   Implement methods in the Student class to:
+   • Add new courses to a student's record
+   • Update student CGPA
+   • Display complete student information
+   • Validate input data (e.g., CGPA range, course addition)
+3. Student Management System Class
+   Create a StudentManagementSystem class with capabilities to:
+   • Add new students to the system
+   • Search for students by roll number
+   • Display all student records
+   • Manage a collection of student objects
+   Functional Requirements
+   The system should support the following operations:
+4. Create student records with different initialization methods
+5. Add courses to a student's academic record
+6. Update academic performance (CGPA)
+7. Retrieve and display student information
+8. Perform basic error checking and input validation*/
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+
+using namespace std;
+
+class Student {
+private:
+    string name;
+    int rollNumber;
+    float cgpa;
+    vector<string> courses;
+
+public:
+    Student() : name("Unknown"), rollNumber(0), cgpa(0.0f) {}
+    Student(string n, int roll, float c) {
+        name = n;
+        rollNumber = roll;
+        setCGPA(c); 
+    }
+    Student(const Student &s) {
+        name = s.name;
+        rollNumber = s.rollNumber;
+        cgpa = s.cgpa;
+        courses = s.courses;
+    }
+
+    ~Student() {
+        cout << "Destructor called for student roll number: " << rollNumber << endl;
+    }
+    void addCourse(string course) {
+        if (find(courses.begin(), courses.end(), course) == courses.end()) {
+            courses.push_back(course);
+        } else {
+            cout << "Course already added.\n";
+        }
+    }
+    void setCGPA(float c) {
+        if (c >= 0.0 && c <= 10.0) {
+            cgpa = c;
+        } else {
+            cout << "Invalid CGPA! Must be between 0.0 and 10.0\n";
+        }
+    }
+
+    float getCGPA() const {
+        return cgpa;
+    }
+
+    int getRollNumber() const {
+        return rollNumber;
+    }
+
+    void display() const {
+        cout << "\n--- Student Information ---\n";
+        cout << "Name       : " << name << endl;
+        cout << "Roll Number: " << rollNumber << endl;
+        cout << "CGPA       : " << cgpa << endl;
+        cout << "Courses    : ";
+        if (courses.empty()) {
+            cout << "None\n";
+        } else {
+            for (const auto& course : courses) {
+                cout << course << " ";
+            }
+            cout << endl;
+        }
+    }
+};
+
+class StudentManagementSystem {
+private:
+    vector<Student> students;
+
+public:
+    void addStudent(const Student& s) {
+        students.push_back(s);
+    }
+
+    Student* searchStudent(int roll) {
+        for (auto& student : students) {
+            if (student.getRollNumber() == roll) {
+                return &student;
+            }
+        }
+        return nullptr;
+    }
+
+    void displayAllStudents() {
+        if (students.empty()) {
+            cout << "No student records available.\n";
+        } else {
+            for (const auto& student : students) {
+                student.display();
+            }
+        }
+    }
+};
+
+int main() {
+    StudentManagementSystem sms;
+    Student s1("Alice", 101, 9.2);
+    Student s2("Bob", 102, 8.5);
+
+    sms.addStudent(s1);
+    sms.addStudent(s2);
+
+    Student* ptr = sms.searchStudent(101);
+    if (ptr != nullptr) {
+        ptr->addCourse("Math");
+        ptr->addCourse("Physics");
+    }
+
+    ptr = sms.searchStudent(102);
+    if (ptr != nullptr) {
+        ptr->setCGPA(9.0);
+    }
+    sms.displayAllStudents();
+    return 0;
+}
+
