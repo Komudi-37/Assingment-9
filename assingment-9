@@ -45,6 +45,7 @@ System Requirements
 #include <map>
 #include <stdexcept>
 #include <limits>
+#include <algorithm> // Added for std::remove
 using namespace std;
 
 class UniversitySystemException : public exception {
@@ -163,7 +164,7 @@ public:
 };
 
 class GradeBook {
-    map<string, float> studentGrades; // ID -> grade
+    map<string, float> studentGrades; 
 
 public:
     void addGrade(const string& studentID, float grade) {
@@ -188,7 +189,7 @@ public:
 
     void dropStudent(const string& courseCode, const string& studentID) {
         auto& students = courseEnrollments[courseCode];
-        students.erase(remove(students.begin(), students.end(), studentID), students.end());
+        students.erase(std::remove(students.begin(), students.end(), studentID), students.end());
     }
 };
 
