@@ -42,123 +42,194 @@ System Requirements
 8. Perform basic error checking and input validation*/
 #include <iostream>
 #include <vector>
-#include <string>
-#include <algorithm>
-
+#include <map>
+#include <stdexcept>
+#include <limits>
 using namespace std;
 
-class Student {
-private:
+class UniversitySystemException : public exception {
+    string message;
+public:
+    UniversitySystemException(const string& msg) : message(msg) {}
+    const char* what() const noexcept override { return message.c_str(); }
+};
+
+class EnrollmentException : public UniversitySystemException {
+public:
+    EnrollmentException(const string& msg) : UniversitySystemException(msg) {}
+};
+
+class GradeException : public UniversitySystemException {
+public:
+    GradeException(const string& msg) : UniversitySystemException(msg) {}
+};
+
+class PaymentException : public UniversitySystemException {
+public:
+    PaymentException(const string& msg) : UniversitySystemException(msg) {}
+};
+
+class Person {
+protected:
     string name;
-    int rollNumber;
-    float cgpa;
-    vector<string> courses;
+    int age;
+    string ID;
+    string contactInfo;
 
 public:
-    Student() : name("Unknown"), rollNumber(0), cgpa(0.0f) {}
-    Student(string n, int roll, float c) {
-        name = n;
-        rollNumber = roll;
-        setCGPA(c); 
+    Person(const string& name, int age, const string& ID, const string& contactInfo)
+        : name(name), age(age), ID(ID), contactInfo(contactInfo) {
+        setAge(age);
     }
-    Student(const Student &s) {
-        name = s.name;
-        rollNumber = s.rollNumber;
-        cgpa = s.cgpa;
-        courses = s.courses;
+    virtual ~Person() {}
+
+    void setAge(int a) {
+        if (a <= 0 || a > 100) throw invalid_argument("Invalid age");
+        age = a;
     }
 
-    ~Student() {
-        cout << "Destructor called for student roll number: " << rollNumber << endl;
-    }
-    void addCourse(string course) {
-        if (find(courses.begin(), courses.end(), course) == courses.end()) {
-            courses.push_back(course);
-        } else {
-            cout << "Course already added.\n";
-        }
-    }
-    void setCGPA(float c) {
-        if (c >= 0.0 && c <= 10.0) {
-            cgpa = c;
-        } else {
-            cout << "Invalid CGPA! Must be between 0.0 and 10.0\n";
-        }
+    virtual void displayDetails() const {
+        cout << "Name: " << name << ", Age: " << age << ", ID: " << ID << ", Contact: " << contactInfo << endl;
     }
 
-    float getCGPA() const {
-        return cgpa;
+    virtual double calculatePayment() const { return 0.0; }
+};
+
+class Student : public Person {
+protected:
+    string enrollmentDate, program;
+    float GPA;
+
+public:
+    Student(const string& name, int age, const string& ID, const string& contact,
+        const string& enrollmentDate, const string& program, float GPA)
+        : Person(name, age, ID, contact), enrollmentDate(enrollmentDate), program(program) {
+        setGPA(GPA);
     }
 
-    int getRollNumber() const {
-        return rollNumber;
+    void setGPA(float g) {
+        if (g < 0.0 || g > 4.0) throw invalid_argument("Invalid GPA");
+        GPA = g;
     }
 
-    void display() const {
-        cout << "\n--- Student Information ---\n";
-        cout << "Name       : " << name << endl;
-        cout << "Roll Number: " << rollNumber << endl;
-        cout << "CGPA       : " << cgpa << endl;
-        cout << "Courses    : ";
-        if (courses.empty()) {
-            cout << "None\n";
-        } else {
-            for (const auto& course : courses) {
-                cout << course << " ";
-            }
-            cout << endl;
-        }
+    void displayDetails() const override {
+        Person::displayDetails();
+        cout << "Program: " << program << ", GPA: " << GPA << endl;
     }
 };
 
-class StudentManagementSystem {
-private:
-    vector<Student> students;
+class Professor : public Person {
+protected:
+    string department, specialization, hireDate;
 
 public:
-    void addStudent(const Student& s) {
-        students.push_back(s);
-    }
+    Professor(const string& name, int age, const string& ID, const string& contact,
+        const string& dept, const string& spec, const string& hireDate)
+        : Person(name, age, ID, contact), department(dept), specialization(spec), hireDate(hireDate) {}
 
-    Student* searchStudent(int roll) {
-        for (auto& student : students) {
-            if (student.getRollNumber() == roll) {
-                return &student;
-            }
-        }
-        return nullptr;
-    }
-
-    void displayAllStudents() {
-        if (students.empty()) {
-            cout << "No student records available.\n";
-        } else {
-            for (const auto& student : students) {
-                student.display();
-            }
-        }
+    void displayDetails() const override {
+        Person::displayDetails();
+        cout << "Department: " << department << ", Specialization: " << specialization << endl;
     }
 };
 
-int main() {
-    StudentManagementSystem sms;
-    Student s1("Alice", 101, 9.2);
-    Student s2("Bob", 102, 8.5);
+class Course {
+    string code, title, description;
+    int credits;
+    Professor* instructor;
 
-    sms.addStudent(s1);
-    sms.addStudent(s2);
-
-    Student* ptr = sms.searchStudent(101);
-    if (ptr != nullptr) {
-        ptr->addCourse("Math");
-        ptr->addCourse("Physics");
+public:
+    Course(string code, string title, int credits, string desc, Professor* instr)
+        : code(code), title(title), description(desc), credits(credits), instructor(instr) {
+        if (credits <= 0) throw invalid_argument("Invalid credits");
     }
 
-    ptr = sms.searchStudent(102);
-    if (ptr != nullptr) {
-        ptr->setCGPA(9.0);
+    string getCode() const { return code; }
+    string getTitle() const { return title; }
+    Professor* getInstructor() const { return instructor; }
+};
+
+class Department {
+    string name, location;
+    double budget;
+    vector<Professor*> professors;
+
+public:
+    Department(string name, string location, double budget)
+        : name(name), location(location), budget(budget) {}
+
+    void addProfessor(Professor* p) { professors.push_back(p); }
+    vector<Professor*> getProfessors() const { return professors; }
+};
+
+class GradeBook {
+    map<string, float> studentGrades; // ID -> grade
+
+public:
+    void addGrade(const string& studentID, float grade) {
+        if (grade < 0 || grade > 100) throw GradeException("Invalid grade value");
+        studentGrades[studentID] = grade;
     }
-    sms.displayAllStudents();
-    return 0;
+
+    float calculateAverageGrade() {
+        float sum = 0;
+        for (auto& entry : studentGrades) sum += entry.second;
+        return studentGrades.empty() ? 0 : sum / studentGrades.size();
+    }
+};
+
+class EnrollmentManager {
+    map<string, vector<string>> courseEnrollments; 
+
+public:
+    void enrollStudent(const string& courseCode, const string& studentID) {
+        courseEnrollments[courseCode].push_back(studentID);
+    }
+
+    void dropStudent(const string& courseCode, const string& studentID) {
+        auto& students = courseEnrollments[courseCode];
+        students.erase(remove(students.begin(), students.end(), studentID), students.end());
+    }
+};
+
+void testPolymorphism() {
+    vector<Person*> people;
+    people.push_back(new Student("Alice", 20, "S01", "alice@example.com", "2022", "CS", 3.8));
+    people.push_back(new Professor("Dr. Bob", 45, "P01", "bob@uni.edu", "CS", "AI", "2015"));
+
+    for (Person* p : people) {
+        p->displayDetails();
+        cout << "Payment: " << p->calculatePayment() << "\n\n";
+        delete p;
+    }
 }
 
+int main() {
+    try {
+        Department csDept("Computer Science", "Block A", 100000);
+        Professor* prof1 = new Professor("Dr. Smith", 50, "P02", "smith@uni.edu", "CS", "ML", "2010");
+        csDept.addProfessor(prof1);
+
+        Course algo("CS101", "Algorithms", 4, "Introduction to algorithms", prof1);
+        Student s1("John", 19, "S101", "john@gmail.com", "2023", "CS", 3.6);
+
+        GradeBook gb;
+        gb.addGrade("S101", 88);
+        cout << "Average Grade: " << gb.calculateAverageGrade() << endl;
+
+        EnrollmentManager em;
+        em.enrollStudent("CS101", "S101");
+
+        testPolymorphism();
+
+        delete prof1;
+    }
+    catch (UniversitySystemException& ex) {
+        cerr << "University System Error: " << ex.what() << endl;
+    }
+    catch (exception& ex) {
+        cerr << "Error: " << ex.what() << endl;
+    }
+
+    return 0;
+}
